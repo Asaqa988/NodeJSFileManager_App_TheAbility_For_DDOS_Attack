@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Excel File Manager</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    input, textarea { display: block; margin-bottom: 10px; width: 300px; }
+    button { margin-bottom: 20px; }
+    pre { background: #f4f4f4; padding: 10px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Excel File Manager</h1>
+
+  <section>
+    <h2>Read Excel File</h2>
+    <input type="text" id="readFileName" placeholder="Enter .xlsx file name">
+    <button onclick="readFile()">Read File</button>
+    <pre id="readContent"></pre>
+  </section>
+
+  <section>
+    <h2>Write to Excel File</h2>
+    <input type="text" id="writeFileName" placeholder="Enter .xlsx file name">
+    <textarea id="writeContent" placeholder="Enter JSON content"></textarea>
+    <button onclick="writeFile()">Write File</button>
+  </section>
+
+  <section>
+    <h2>Append to Excel File</h2>
+    <input type="text" id="appendFileName" placeholder="Enter .xlsx file name">
+    <textarea id="appendContent" placeholder="Enter JSON content"></textarea>
+    <button onclick="appendFile()">Append to File</button>
+  </section>
+
+  <section>
+    <h2>Delete Excel File</h2>
+    <input type="text" id="deleteFileName" placeholder="Enter .xlsx file name">
+    <button onclick="deleteFile()">Delete File</button>
+  </section>
+
+  <section>
+    <h2>Rename Excel File</h2>
+    <input type="text" id="oldFileName" placeholder="Enter current .xlsx file name">
+    <input type="text" id="newFileName" placeholder="Enter new .xlsx file name">
+    <button onclick="renameFile()">Rename File</button>
+  </section>
+
+  <section>
+    <h2>Create Directory</h2>
+    <input type="text" id="createDirName" placeholder="Enter directory name">
+    <button onclick="createDirectory()">Create Directory</button>
+  </section>
+
+  <section>
+    <h2>Delete Directory</h2>
+    <input type="text" id="deleteDirName" placeholder="Enter directory name">
+    <button onclick="deleteDirectory()">Delete Directory</button>
+  </section>
+
+  <script>
+    // Function to validate that file names end with .xlsx
+    function validateFileName(fileName) {
+      return fileName.toLowerCase().endsWith('.xlsx');
+    }
+
+    function showAlert(message) {
+      alert(message);
+    }
+
+    async function readFile() {
+      const fileName = document.getElementById('readFileName').value.trim();
+      if (!validateFileName(fileName)) return showAlert('Only .xlsx files are allowed!');
+      
+      try {
+        const response = await fetch(`/api/read?fileName=${encodeURIComponent(fileName)}`);
+        const data = await response.json();
+        document.getElementById('readContent').textContent = JSON.stringify(data.data, null, 2) || data.error;
+      } catch (error) {
+        showAlert('Error reading file.');
+      }
+    }
+
+    async function writeFile() {
+      const fileName = document.getElementById('writeFileName').value.trim();
+      const content = document.getElementById('writeContent').value;
+      if (!validateFileName(fileName)) return showAlert('Only .xlsx files are allowed!');
+      
+      try {
+        const jsonData = JSON.parse(content); // Ensure valid JSON
+        const response = await fetch('/api/write', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName, content: jsonData })
+        });
+        const data = await response.json();
+        showAlert(data.message || data.error);
+      } catch (error) {
+        showAlert('Error writing file. Ensure the content is valid JSON.');
+      }
+    }
+
+    async function appendFile() {
+      const fileName = document.getElementById('appendFileName').value.trim();
+      const content = document.getElementById('appendContent').value;
+      if (!validateFileName(fileName)) return showAlert('Only .xlsx files are allowed!');
+      
+      try {
+        const jsonData = JSON.parse(content); // Ensure valid JSON
+        const response = await fetch('/api/append', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName, content: jsonData })
+        });
+        const data = await response.json();
+        showAlert(data.message || data.error);
+      } catch (error) {
+        showAlert('Error appending file. Ensure the content is valid JSON.');
+      }
+    }
+
+    async function deleteFile() {
+      const fileName = document.getElementById('deleteFileName').value.trim();
+      if (!validateFileName(fileName)) return showAlert('Only .xlsx files are allowed!');
+      
+      try {
+        const response = await fetch(`/api/delete?fileName=${encodeURIComponent(fileName)}`, { method: 'DELETE' });
+        const data = await response.json();
+        showAlert(data.message || data.error);
+      } catch (error) {
+        showAlert('Error deleting file.');
+      }
+    }
+
+    async function renameFile() {
+      const oldName = document.getElementById('oldFileName').value.trim();
+      const newName = document.getElementById('newFileName').value.trim();
+      if (!validateFileName(oldName) || !validateFileName(newName)) return showAlert('Only .xlsx files are allowed!');
+      
+      try {
+        const response = await fetch('/api/rename', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ oldName, newName })
+        });
+        const data = await response.json();
+        showAlert(data.message || data.error);
+      } catch (error) {
+        showAlert('Error renaming file.');
+      }
+    }
+
+    async function createDirectory() {
+      const dirName = document.getElementById('createDirName').value.trim();
+      if (!dirName) return showAlert('Directory name is required!');
+      
+      try {
+        const response = await fetch('/api/create-dir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dirName })
+        });
+        const data = await response.json();
+        showAlert(data.message || data.error);
+      } catch (error) {
+        showAlert('Error creating directory.');
+      }
+    }
+
+    async function deleteDirectory() {
+      const dirName = document.getElementById('deleteDirName').value.trim();
+      if (!dirName) return showAlert('Directory name is required!');
+      
+      try {
+        const response = await fetch(`/api/delete-dir?dirName=${encodeURIComponent(dirName)}`, { method: 'DELETE' });
+        const data = await response.json();
+        showAlert(data.message || data.error);
+      } catch (error) {
+        showAlert('Error deleting directory.');
+      }
+    }
+  </script>
+
+</body>
+</html>
